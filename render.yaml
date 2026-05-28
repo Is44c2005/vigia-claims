@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: vigia-backend
+    runtime: python
+    rootDir: .
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python -m uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false          # se ingresa manualmente en el dashboard de Render
+      - key: PYTHONIOENCODING
+        value: utf-8
+      - key: ALLOWED_ORIGINS
+        sync: false          # pegar la URL del frontend desplegado, ej: https://vigia.vercel.app

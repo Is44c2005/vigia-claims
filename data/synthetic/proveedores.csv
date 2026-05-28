@@ -1,0 +1,61 @@
+﻿id_proveedor,nombre_proveedor,tipo,ciudad,reclamos_asociados,monto_promedio_reclamado,porcentaje_casos_observados,antiguedad_años,en_lista_restrictiva
+PRV-0001,AutoExpress Machala,Taller Automotriz,Machala,30,5299.85,0.22,5.4,No
+PRV-0002,AutoExpress Guayaquil,Taller Automotriz,Guayaquil,14,7963.18,0.0,14.6,No
+PRV-0003,Valuadores del Sur,Perito,Ibarra,65,4655.78,0.15,18.2,No
+PRV-0004,Valuadores del Sur,Perito,Manta,23,4543.39,0.12,5.8,No
+PRV-0005,Centro de Salud Plus Manta,Clínica,Manta,55,1275.56,0.09,11.1,No
+PRV-0006,ExpressAutos Riobamba,Taller Automotriz,Riobamba,47,10482.29,0.19,10.0,No
+PRV-0007,Hospital Andino,Hospital,Manta,71,2053.72,0.08,13.2,No
+PRV-0008,Centro de Salud Plus Cuenca,Clínica,Cuenca,77,2288.33,0.08,11.2,No
+PRV-0009,Hospital Andino,Hospital,Ambato,33,13174.94,0.18,15.0,No
+PRV-0010,AutoAndina Quito,Taller Automotriz,Quito,128,24798.92,0.8,11.0,Sí
+PRV-0011,AutoAndina Quito,Taller Automotriz,Quito,77,1383.35,0.05,19.9,No
+PRV-0012,MasterAuto Quito,Taller Multimarca,Quito,18,12643.9,0.17,3.0,No
+PRV-0013,Proveedor Empresa Reparaciones Guayaquil 13,Empresa Reparaciones,Guayaquil,18,4180.0,0.29,5.4,No
+PRV-0014,AutoAndina Manta,Taller Automotriz,Manta,77,8336.48,0.03,19.3,No
+PRV-0015,PeritosEcuador,Perito,Guayaquil,17,13616.1,0.06,16.8,No
+PRV-0016,Hospital del Pacífico,Hospital,Ambato,21,8061.22,0.21,5.5,No
+PRV-0017,AutoAndina Babahoyo,Taller Automotriz,Babahoyo,15,14787.29,0.04,13.5,No
+PRV-0018,Proveedor Empresa Reparaciones Cuenca 18,Empresa Reparaciones,Cuenca,51,13839.28,0.17,4.0,No
+PRV-0019,TallerVIP Ambato,Taller Automotriz,Ambato,23,7997.68,0.2,10.8,No
+PRV-0020,AutoNorte Quito,Taller Automotriz,Quito,72,13899.78,0.25,4.2,No
+PRV-0021,CentroAuto Guayaquil,Taller Automotriz,Guayaquil,15,716.09,0.02,5.4,No
+PRV-0022,TallerVIP Ambato,Taller Multimarca,Ambato,9,10529.14,0.0,8.3,No
+PRV-0023,Valuadores del Sur,Perito,Guayaquil,6,13695.59,0.13,10.7,No
+PRV-0024,Salud Total Guayaquil,Clínica,Guayaquil,72,13833.48,0.24,13.9,No
+PRV-0025,Proveedor Empresa Reparaciones Quito 25,Empresa Reparaciones,Quito,16,662.46,0.25,2.6,No
+PRV-0026,AutoExpress Guayaquil,Taller Multimarca,Guayaquil,50,12054.46,0.07,6.5,No
+PRV-0027,MedCenter Ambato,Clínica,Ambato,38,13964.06,0.31,13.3,No
+PRV-0028,Centro Médico Norte Ibarra,Clínica,Ibarra,7,11899.45,0.21,6.3,No
+PRV-0029,Proveedor Funeraria Guayaquil 29,Funeraria,Guayaquil,71,9801.96,0.27,4.7,No
+PRV-0030,AutoExpress Cuenca,Taller Automotriz,Cuenca,76,5087.69,0.14,13.8,No
+PRV-0031,Proveedor Funeraria Quito 31,Funeraria,Quito,1,3379.06,0.03,15.7,No
+PRV-0032,Hospital Privado Central,Hospital,Cuenca,52,13781.99,0.16,1.1,No
+PRV-0033,PeritosEcuador,Perito,Quito,117,15438.09,0.93,2.4,Sí
+PRV-0034,Peritajes Rápidos SA,Perito,Riobamba,6,6820.72,0.32,19.5,No
+PRV-0035,GYE Motors Quito,Taller Automotriz,Quito,35,1834.4,0.14,1.2,No
+PRV-0036,Proveedor Empresa Reparaciones Quito 36,Empresa Reparaciones,Quito,48,4836.82,0.23,2.6,No
+PRV-0037,CentroAuto Guayaquil,Taller Multimarca,Guayaquil,29,14808.33,0.25,1.0,No
+PRV-0038,AutoPro Ibarra,Taller Automotriz,Ibarra,13,6282.94,0.19,16.5,No
+PRV-0039,Salud Total Guayaquil,Clínica,Guayaquil,80,7306.79,0.09,10.9,No
+PRV-0040,Clínica del Valle Cuenca,Clínica,Cuenca,72,11523.03,0.13,9.2,No
+PRV-0041,NorAndina Autos Guayaquil,Taller Automotriz,Guayaquil,71,2541.99,0.07,11.2,No
+PRV-0042,Proveedor Empresa Reparaciones Quito 42,Empresa Reparaciones,Quito,80,6376.22,0.2,8.4,No
+PRV-0043,Valuadores del Sur,Perito,Guayaquil,68,3894.16,0.27,9.2,No
+PRV-0044,Inspección Total,Perito,Quito,73,2215.54,0.18,11.1,No
+PRV-0045,Proveedor Empresa Reparaciones Guayaquil 45,Empresa Reparaciones,Guayaquil,63,11833.04,0.24,2.4,No
+PRV-0046,AutoNorte Quito,Taller Automotriz,Quito,76,6716.94,0.13,7.9,No
+PRV-0047,ExpressAutos Guayaquil,Taller Automotriz,Guayaquil,59,13503.49,0.03,1.4,No
+PRV-0048,Salud Total Portoviejo,Clínica,Portoviejo,3,14177.39,0.08,3.5,No
+PRV-0049,Centro de Salud Plus Quito,Clínica,Quito,67,8871.03,0.16,16.8,No
+PRV-0050,Hospital del Pacífico,Hospital,Ambato,39,14677.78,0.13,11.5,No
+PRV-0051,AutoNorte Quito,Taller Automotriz,Quito,74,5843.88,0.27,3.6,No
+PRV-0052,CentroAuto Ambato,Taller Automotriz,Ambato,47,5366.41,0.27,7.0,No
+PRV-0053,Peritajes Rápidos SA,Perito,Guayaquil,59,4716.42,0.16,2.7,No
+PRV-0054,TallerSur Manta,Taller Multimarca,Manta,95,14546.64,0.61,4.5,Sí
+PRV-0055,Hospital Privado Central,Hospital,Ibarra,71,2597.47,0.03,2.7,No
+PRV-0056,TallerSur Quito,Taller Automotriz,Quito,18,6818.27,0.21,4.4,No
+PRV-0057,MegaTaller Quito,Taller Automotriz,Quito,62,5346.88,0.21,12.2,No
+PRV-0058,Clínica Internacional,Hospital,Machala,34,10954.59,0.02,8.0,No
+PRV-0059,TallerVIP Quito,Taller Automotriz,Quito,71,5525.87,0.05,6.6,No
+PRV-0060,Clínica Vida Machala,Clínica,Machala,6,5124.93,0.29,15.8,No

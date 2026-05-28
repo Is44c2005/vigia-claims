@@ -1,0 +1,36 @@
+# ── Secretos ──────────────────────────────────────────────────
+.env
+.env.local
+frontend/.env.local
+frontend/.env.*.local
+
+# ── Python ────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.Python
+*.egg-info/
+build/
+dist/
+
+# ── Node / Frontend ───────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# ── Archivos generados no necesarios para correr el proyecto ──
+data/processed/*.xlsx
+
+# ── IDE / OS ──────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── Jupyter ───────────────────────────────────────────────────
+.ipynb_checkpoints/
