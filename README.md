@@ -102,12 +102,13 @@ Tabla filtrable de siniestros con score de riesgo, semáforo, reglas críticas a
 y probabilidad del modelo ML. Exportación a CSV.
 
 ### Detalle de Siniestro
-Búsqueda por ID. Muestra métricas clave, señales detectadas como badges,
-explicación del motor de reglas y descripción del caso.
+Búsqueda por ID. Muestra métricas clave, señales detectadas como badges
+y explicación estructurada del motor de reglas con secciones: Información
+General, Reglas Críticas Activadas, Señales Detectadas y Acción Recomendada.
 
 ### Análisis Visual
-Cuatro gráficos interactivos:
-- Distribución del semáforo de riesgo (donut)
+Cinco gráficos interactivos:
+- Distribución del semáforo de riesgo (donut con colores correctos por nombre)
 - Histograma de scores por nivel de riesgo
 - Top proveedores con más alertas rojas
 - Siniestros por ramo y nivel de riesgo (barras apiladas)
@@ -115,8 +116,8 @@ Cuatro gráficos interactivos:
 
 ### Analizar Nuevo
 Formulario para evaluar un siniestro nuevo en tiempo real. El resultado muestra
-el veredicto, las señales detectadas en lenguaje natural, las reglas críticas
-como badges y la acción recomendada.
+el veredicto con semáforo de color, señales detectadas en lenguaje natural,
+reglas críticas como badges y acción recomendada en caja destacada.
 
 ### Chat con VigIA
 Agente conversacional powered by GPT-4o con contexto completo del portafolio.

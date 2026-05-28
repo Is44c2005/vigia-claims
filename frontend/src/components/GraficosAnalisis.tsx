@@ -8,6 +8,7 @@ import { api, Filtros } from "../lib/api";
 import { COLORS } from "../lib/utils";
 
 const PIE_COLORS = [COLORS.Rojo, COLORS.Amarillo, COLORS.Verde];
+const PIE_ORDER  = ["Rojo", "Amarillo", "Verde"];
 
 // ─── Histograma de scores ─────────────────────────────────────
 function buildBins(scores: number[], bins = 10): { bin: string; count: number }[] {
@@ -88,9 +89,9 @@ export default function GraficosAnalisis({ filtros }: Props) {
           <h3 className="text-text font-semibold mb-4">Distribución Semáforo de Riesgo</h3>
           <ResponsiveContainer width="100%" height={260}>
             <PieChart>
-              <Pie data={semData ?? []} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={3}>
-                {(semData ?? []).map((entry, i) => (
-                  <Cell key={entry.name} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+              <Pie data={[...(semData ?? [])].sort((a, b) => PIE_ORDER.indexOf(a.name) - PIE_ORDER.indexOf(b.name))} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={3}>
+                {[...(semData ?? [])].sort((a, b) => PIE_ORDER.indexOf(a.name) - PIE_ORDER.indexOf(b.name)).map((entry, i) => (
+                  <Cell key={entry.name} fill={PIE_COLORS[i]} />
                 ))}
               </Pie>
               <Tooltip contentStyle={tooltipStyle} formatter={(v: number) => [v + " siniestros"]} />
