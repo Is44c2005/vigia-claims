@@ -15,9 +15,9 @@ Responsabilidades:
 import pandas as pd
 import numpy as np
 import os
-import re
 from datetime import datetime
-from difflib import SequenceMatcher
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # ─────────────────────────────────────────────
 # CONFIGURACIÓN DE RUTAS
@@ -235,50 +235,72 @@ def construir_vista_enriquecida(tablas: dict) -> pd.DataFrame:
 # 2. SIMILITUD DE NARRATIVAS (NLP básico)
 # ─────────────────────────────────────────────
 
+STOPWORDS_ES = [
+    "de","la","el","en","y","a","los","del","se","las","por","un","para",
+    "con","no","una","su","al","es","lo","como","más","pero","sus","le",
+    "ya","o","fue","este","ha","si","porque","esta","son","entre","cuando",
+    "muy","sin","sobre","también","me","hasta","donde","quien","desde",
+    "todo","durante","uno","ni","contra","ese","que","cual","han","fue",
+    "ser","tiene","han","era","sido","estar","hay","había","haber",
+]
+
 def calcular_similitud_narrativas(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Compara cada descripción contra todas las demás usando SequenceMatcher.
-    Agrega columna max_similitud_pct y id_siniestro_similar.
-    Optimizado: solo compara dentro del mismo ramo y sucursal.
+    Compara narrativas usando TF-IDF (unigramas + bigramas) + similitud coseno.
+    Agrupa por ramo+sucursal para mantener comparaciones en contexto relevante.
     """
-    print("\n🔍 Calculando similitud de narrativas...")
+    print("\nCalculando similitud de narrativas (TF-IDF + coseno)...")
 
     df = df.copy()
-    df["max_similitud_pct"]   = 0.0
+    df["max_similitud_pct"]    = 0.0
     df["id_siniestro_similar"] = ""
+    df["num_similares_alto"]   = 0
 
     descripciones = df["descripcion"].fillna("").tolist()
     ids           = df["id_siniestro"].tolist()
     ramos         = df["ramo"].tolist()
     sucursales    = df["sucursal"].fillna("").tolist()
 
-    # Solo comparar dentro del mismo ramo + sucursal para eficiencia
-    grupos = {}
+    grupos: dict = {}
     for i, (r, s) in enumerate(zip(ramos, sucursales)):
-        key = f"{r}_{s}"
-        grupos.setdefault(key, []).append(i)
+        grupos.setdefault(f"{r}_{s}", []).append(i)
 
-    comparaciones = 0
-    for key, indices in grupos.items():
-        for a in range(len(indices)):
-            for b in range(a + 1, len(indices)):
-                i, j = indices[a], indices[b]
-                texto_i = descripciones[i].lower().strip()
-                texto_j = descripciones[j].lower().strip()
-                if not texto_i or not texto_j:
-                    continue
-                ratio = SequenceMatcher(None, texto_i, texto_j).ratio() * 100
-                comparaciones += 1
-                if ratio > df.at[i, "max_similitud_pct"]:
-                    df.at[i, "max_similitud_pct"]   = round(ratio, 1)
-                    df.at[i, "id_siniestro_similar"] = ids[j]
-                if ratio > df.at[j, "max_similitud_pct"]:
-                    df.at[j, "max_similitud_pct"]   = round(ratio, 1)
-                    df.at[j, "id_siniestro_similar"] = ids[i]
+    procesados = 0
+    for indices in grupos.values():
+        if len(indices) < 2:
+            continue
 
-    print(f"   → {comparaciones} comparaciones realizadas")
+        textos = [descripciones[i].lower().strip() for i in indices]
+        if sum(1 for t in textos if t) < 2:
+            continue
+
+        try:
+            vectorizer  = TfidfVectorizer(
+                analyzer    = "word",
+                ngram_range = (1, 2),
+                min_df      = 1,
+                stop_words  = STOPWORDS_ES,
+            )
+            matriz      = vectorizer.fit_transform(textos)
+            sim_matrix  = cosine_similarity(matriz)
+        except ValueError:
+            continue
+
+        for local_idx, global_idx in enumerate(indices):
+            fila = sim_matrix[local_idx].copy()
+            fila[local_idx] = 0.0          # excluir auto-similitud
+
+            mejor_local = int(np.argmax(fila))
+            max_sim     = float(fila[mejor_local]) * 100
+
+            df.at[global_idx, "max_similitud_pct"]    = round(max_sim, 1)
+            df.at[global_idx, "id_siniestro_similar"] = ids[indices[mejor_local]] if max_sim > 0 else ""
+            df.at[global_idx, "num_similares_alto"]   = int(np.sum(fila >= 0.85))
+            procesados += 1
+
     casos_similares = (df["max_similitud_pct"] >= 70).sum()
-    print(f"   → {casos_similares} siniestros con narrativa similar (≥70%)")
+    print(f"   Siniestros procesados: {procesados}")
+    print(f"   Narrativas similares (>=70%): {casos_similares}")
     return df
 
 # ─────────────────────────────────────────────
@@ -677,6 +699,7 @@ def ejecutar_motor(data_dir: str = DATA_DIR, output_dir: str = OUTPUT_DIR) -> pd
             "num_señales_motor":         len(señales),
             "max_similitud_pct":         row.get("max_similitud_pct", 0),
             "id_siniestro_similar":      row.get("id_siniestro_similar", ""),
+            "num_similares_alto":        row.get("num_similares_alto", 0),
             "_detalles_texto":           detalles,
         })
         resultados.append(res)
@@ -706,7 +729,7 @@ def ejecutar_motor(data_dir: str = DATA_DIR, output_dir: str = OUTPUT_DIR) -> pd
         "inconsistencias", "observaciones_doc",
         "historial_siniestros_asegurado", "siniestros_vehiculo_18m",
         "reclamos_ultimos_12m", "score_cliente_simulado",
-        "max_similitud_pct", "id_siniestro_similar",
+        "max_similitud_pct", "id_siniestro_similar", "num_similares_alto",
         "score_motor", "semaforo_motor",
         "reglas_criticas_activadas", "señales_motor",
         "num_señales_motor", "prioridad_revision",
