@@ -176,7 +176,9 @@ function TabRanking({ onSelectProveedor }: { onSelectProveedor: (id: string) => 
                   <td className="py-2.5 pr-4 font-mono text-xs text-accent">{a.id_asegurado}</td>
                   <td className="py-2.5 pr-4">
                     <div className="flex items-center gap-2">
-                      {a.semaforo_predominante && <SemBadge sem={a.semaforo_predominante} />}
+                      {a.score_maximo != null && (
+                        <SemBadge sem={a.score_maximo >= 76 ? "Rojo" : a.score_maximo >= 41 ? "Amarillo" : "Verde"} />
+                      )}
                       <span className="font-bold text-text">{a.siniestros_criticos}</span>
                     </div>
                   </td>
