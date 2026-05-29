@@ -24,8 +24,14 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export default function App() {
-  const [tab,     setTab]     = useState<TabId>("panel");
-  const [filtros, setFiltros] = useState<Filtros>(DEFAULT_FILTROS);
+  const [tab,        setTab]        = useState<TabId>("panel");
+  const [filtros,    setFiltros]    = useState<Filtros>(DEFAULT_FILTROS);
+  const [detalleId,  setDetalleId]  = useState("");
+
+  function navigateToDetalle(id: string) {
+    setDetalleId(id);
+    setTab("detalle");
+  }
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["estadisticas"],
@@ -108,9 +114,9 @@ export default function App() {
               <TablaSiniestros filtros={filtros} />
             </div>
           )}
-          {tab === "detalle"  && <DetalleSiniestro />}
+          {tab === "detalle"  && <DetalleSiniestro initialId={detalleId} />}
           {tab === "graficos" && <GraficosAnalisis filtros={filtros} />}
-          {tab === "red"      && <RedRelaciones />}
+          {tab === "red"      && <RedRelaciones onNavigateToDetalle={navigateToDetalle} />}
           {tab === "nuevo"    && <AnalizarNuevo />}
           {tab === "chat"     && <ChatIA />}
         </div>

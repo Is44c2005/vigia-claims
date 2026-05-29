@@ -479,3 +479,309 @@ def get_reporte_csv():
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ─── Señales: mapeo código → texto legible ──────────────────────
+
+SENALES_TEXTO: dict = {
+    "S01": "Borde de vigencia crítico (≤10 días inicio póliza)",
+    "S02": "Borde de vigencia (11-30 días inicio póliza)",
+    "S03": "Demora en denuncia de robo (>48 hrs)",
+    "S04": "Demora en denuncia de robo (24-48 hrs)",
+    "S05": "Alta frecuencia reclamos asegurado (≥3)",
+    "S06": "Frecuencia reclamos asegurado (2 eventos)",
+    "S07": "Alta frecuencia conductor en vehículo (≥3)",
+    "S09": "Alta frecuencia reclamos vehículo (≥3)",
+    "S11": "Proveedor en lista restrictiva",
+    "S13": "Documentos incompletos o no entregados",
+    "S14": "Dinámica de accidente sospechosa",
+    "S16": "Documentos inconsistentes / adulterados",
+    "S17": "Reporte tardío del siniestro (>7 días)",
+    "S19": "Narrativa similar a otro reclamo (>85%)",
+    "S21": "Monto cercano o superior a suma asegurada",
+}
+SENALES_CRITICAS = {"S01", "S11", "S16", "S03"}
+
+
+# ─── Red de relaciones: vistas analíticas ───────────────────────
+
+@app.get("/api/relaciones/ranking-proveedores")
+def get_relaciones_ranking():
+    """Calcula ranking de riesgo de proveedores y asegurados para la vista analítica."""
+    df  = get_df().copy()
+    sem = "semaforo_motor"
+
+    # Columnas auxiliares para sumas eficientes sin lambdas
+    df["_rojo"]     = (df[sem] == "Rojo").astype(int)
+    df["_amarillo"] = (df[sem] == "Amarillo").astype(int)
+
+    total_rojos = int(df["_rojo"].sum())
+
+    # Insight: top 3 proveedores concentran X% de los Rojo
+    if "id_proveedor" in df.columns:
+        prv_rojos  = df.groupby("id_proveedor")["_rojo"].sum().sort_values(ascending=False)
+        top3_count = int(prv_rojos.head(3).sum())
+        top3_pct   = round(top3_count / total_rojos * 100, 1) if total_rojos > 0 else 0.0
+    else:
+        top3_count, top3_pct = 0, 0.0
+        prv_rojos = pd.Series(dtype=int)
+
+    # Asegurado con más siniestros Rojo
+    if "id_asegurado" in df.columns:
+        ase_rojos = df.groupby("id_asegurado")["_rojo"].sum().sort_values(ascending=False)
+        top_ase   = str(ase_rojos.index[0]) if not ase_rojos.empty else "—"
+        top_ase_n = int(ase_rojos.iloc[0])  if not ase_rojos.empty else 0
+    else:
+        top_ase, top_ase_n = "—", 0
+        ase_rojos = pd.Series(dtype=int)
+
+    # Tarjeta 1: proveedores con ≥3 casos Rojo
+    prvs_en_alerta = int((prv_rojos >= 3).sum()) if not prv_rojos.empty else 0
+
+    # Tarjeta 2: asegurados con ≥2 casos Rojo
+    aseg_recurrentes = int((ase_rojos >= 2).sum()) if not ase_rojos.empty else 0
+
+    # Tarjeta 3: clústeres = prv en lista restrictiva + prv con >50% casos Rojo
+    if "id_proveedor" in df.columns and "en_lista_restrictiva" in df.columns:
+        prv_stats = df.groupby("id_proveedor").agg(
+            total_c=("id_siniestro", "count"),
+            rojos_c=("_rojo", "sum"),
+            en_lista=("en_lista_restrictiva", "first"),
+        )
+        clusteres = int(
+            ((prv_stats["en_lista"].str.strip() == "Sí") |
+             (prv_stats["rojos_c"] / prv_stats["total_c"].clip(lower=1) > 0.5)).sum()
+        )
+    else:
+        clusteres = 0
+
+    # Tabla de proveedores (top 10 por casos Rojo)
+    if "id_proveedor" in df.columns:
+        agg_cols: dict = {
+            "casos_rojo":    ("_rojo",    "sum"),
+            "casos_amarillo":("_amarillo","sum"),
+            "total_casos":   ("id_siniestro", "count"),
+        }
+        if "nombre_proveedor"     in df.columns: agg_cols["nombre"]   = ("nombre_proveedor", "first")
+        if "tipo"                 in df.columns: agg_cols["tipo"]     = ("tipo", "first")
+        if "en_lista_restrictiva" in df.columns: agg_cols["en_lista"] = ("en_lista_restrictiva", "first")
+
+        prv_tabla = df.groupby("id_proveedor").agg(**agg_cols).reset_index()
+        prv_tabla["pct_concentracion"] = (
+            prv_tabla["casos_rojo"] / prv_tabla["total_casos"].clip(lower=1) * 100
+        ).round(1)
+        prv_tabla["casos_rojo"]     = prv_tabla["casos_rojo"].astype(int)
+        prv_tabla["casos_amarillo"] = prv_tabla["casos_amarillo"].astype(int)
+        prv_tabla = prv_tabla.sort_values("casos_rojo", ascending=False).head(10)
+        tabla_proveedores = clean(prv_tabla)
+    else:
+        tabla_proveedores = []
+
+    # Tabla de asegurados (top 10 por siniestros críticos Rojo+Amarillo)
+    if "id_asegurado" in df.columns:
+        df_crit = df[df[sem].isin(["Rojo", "Amarillo"])]
+        ase_agg: dict = {
+            "siniestros_criticos": ("id_siniestro", "count"),
+            "score_maximo":        ("score_motor", "max"),
+        }
+        if "id_proveedor" in df.columns:
+            ase_agg["proveedores_distintos"] = ("id_proveedor", "nunique")
+
+        ase_tabla = df_crit.groupby("id_asegurado").agg(**ase_agg).reset_index()
+
+        # Semáforo predominante: el más frecuente entre los casos críticos
+        sem_mode = (
+            df_crit.groupby(["id_asegurado", sem])
+            .size()
+            .reset_index(name="_n")
+            .sort_values("_n", ascending=False)
+            .drop_duplicates(subset="id_asegurado")
+            .set_index("id_asegurado")[sem]
+            .rename("semaforo_predominante")
+        )
+        ase_tabla = ase_tabla.join(sem_mode, on="id_asegurado", how="left")
+        ase_tabla = ase_tabla.sort_values("siniestros_criticos", ascending=False).head(10)
+        tabla_asegurados = clean(ase_tabla)
+    else:
+        tabla_asegurados = []
+
+    return {
+        "insight": {
+            "top3_pct":        top3_pct,
+            "top3_count":      top3_count,
+            "total_rojos":     total_rojos,
+            "asegurado_top":   top_ase,
+            "asegurado_top_n": top_ase_n,
+        },
+        "metricas": {
+            "proveedores_en_alerta":  prvs_en_alerta,
+            "asegurados_recurrentes": aseg_recurrentes,
+            "clusteres_detectados":   clusteres,
+        },
+        "tabla_proveedores": tabla_proveedores,
+        "tabla_asegurados":  tabla_asegurados,
+    }
+
+
+@app.get("/api/relaciones/selector-proveedores")
+def get_selector_proveedores():
+    """Lista de proveedores con al menos 1 caso crítico, ordenados por casos Rojo DESC."""
+    df  = get_df()
+    sem = "semaforo_motor"
+    if "id_proveedor" not in df.columns:
+        return []
+
+    df_crit = df[df[sem].isin(["Rojo", "Amarillo"])] if sem in df.columns else df
+    prv = df_crit.groupby("id_proveedor").agg(
+        casos_rojo=(sem, lambda x: int((x == "Rojo").sum())),
+    ).reset_index()
+    if "nombre_proveedor" in df.columns:
+        nombres = df.groupby("id_proveedor")["nombre_proveedor"].first().rename("nombre")
+        prv = prv.join(nombres, on="id_proveedor", how="left")
+
+    prv = prv.sort_values("casos_rojo", ascending=False)
+    return clean(prv)
+
+
+@app.get("/api/relaciones/detalle-proveedor")
+def get_detalle_proveedor(id: str = Query(...)):
+    """Detalle completo de un proveedor: distribución, métricas, señales y siniestros."""
+    df     = get_df()
+    sem    = "semaforo_motor"
+    df_prv = df[df["id_proveedor"] == id].copy() if "id_proveedor" in df.columns else pd.DataFrame()
+    if df_prv.empty:
+        raise HTTPException(status_code=404, detail=f"Proveedor {id} no encontrado")
+
+    total      = len(df_prv)
+    n_rojo     = int((df_prv[sem] == "Rojo").sum())     if sem in df_prv.columns else 0
+    n_amarillo = int((df_prv[sem] == "Amarillo").sum()) if sem in df_prv.columns else 0
+    n_verde    = int((df_prv[sem] == "Verde").sum())    if sem in df_prv.columns else 0
+
+    # Señales más frecuentes: explotar pipe-separated, contar por código
+    sen_col = next(
+        (c for c in df_prv.columns if "eales_motor" in c and "num" not in c), None
+    )
+    senales_planas: list = []
+    if sen_col:
+        for val in df_prv[sen_col].dropna():
+            for parte in str(val).split("|"):
+                codigo = parte.strip().split(":")[0].strip()
+                if codigo and codigo != "nan":
+                    senales_planas.append(codigo)
+
+    top_senales = [
+        {
+            "codigo":      code,
+            "texto":       SENALES_TEXTO.get(code, code),
+            "frecuencia":  freq,
+            "total_casos": total,
+            "es_critica":  code in SENALES_CRITICAS,
+        }
+        for code, freq in Counter(senales_planas).most_common(5)
+    ]
+
+    # Reglas críticas RF más frecuentes
+    rf_planas: list = []
+    if "reglas_criticas_activadas" in df_prv.columns:
+        for val in df_prv["reglas_criticas_activadas"].dropna():
+            for parte in str(val).split(","):
+                r = parte.strip()
+                if r and r != "nan":
+                    rf_planas.append(r)
+    top_reglas = [
+        {"codigo": c, "frecuencia": f, "total_casos": total}
+        for c, f in Counter(rf_planas).most_common()
+    ]
+
+    # Métricas económicas
+    monto_total = float(df_prv["monto_reclamado"].sum())  if "monto_reclamado" in df_prv.columns else 0.0
+    promedio    = float(df_prv["monto_reclamado"].mean()) if "monto_reclamado" in df_prv.columns else 0.0
+    aseg_dist   = int(df_prv["id_asegurado"].nunique())   if "id_asegurado" in df_prv.columns else 0
+    pct_docs    = 0.0
+    if "documentos_inconsistentes" in df_prv.columns:
+        pct_docs = round(
+            (df_prv["documentos_inconsistentes"].str.strip() == "Sí").sum() / total * 100, 1
+        )
+
+    # Siniestros del proveedor (ordenados por score)
+    cols_sin = [c for c in ["id_siniestro", "id_asegurado", "cobertura",
+                             "monto_reclamado", "score_motor", sem] if c in df_prv.columns]
+    siniestros = clean(df_prv[cols_sin].sort_values("score_motor", ascending=False))
+
+    first = df_prv.iloc[0]
+    return {
+        "proveedor": {
+            "id":                   id,
+            "nombre":               str(first.get("nombre_proveedor", id)),
+            "en_lista_restrictiva": str(first.get("en_lista_restrictiva", "No")).strip() == "Sí",
+            "tipo":                 str(first.get("tipo", "—")),
+        },
+        "distribucion": {"rojo": n_rojo, "amarillo": n_amarillo, "verde": n_verde, "total": total},
+        "metricas": {
+            "monto_total":             round(monto_total, 2),
+            "promedio_por_caso":       round(promedio, 2),
+            "asegurados_distintos":    aseg_dist,
+            "pct_docs_inconsistentes": pct_docs,
+        },
+        "senales_frecuentes": top_senales,
+        "reglas_criticas":    top_reglas,
+        "siniestros":         siniestros,
+    }
+
+
+@app.get("/api/relaciones/grafo-cluster")
+def get_grafo_cluster(id: str = Query(...)):
+    """Construye el grafo de clúster centrado en un proveedor (máx 30 siniestros)."""
+    df     = get_df()
+    sem    = "semaforo_motor"
+    df_prv = df[df["id_proveedor"] == id].copy() if "id_proveedor" in df.columns else pd.DataFrame()
+    if df_prv.empty:
+        raise HTTPException(status_code=404, detail=f"Proveedor {id} no encontrado")
+
+    # Limitar a top 25 siniestros por score para no saturar el canvas
+    if "score_motor" in df_prv.columns:
+        df_prv = df_prv.sort_values("score_motor", ascending=False)
+    df_prv = df_prv.head(25)
+
+    nombre_prv = str(df_prv.iloc[0].get("nombre_proveedor", id))
+    en_lista   = str(df_prv.iloc[0].get("en_lista_restrictiva", "No")).strip() == "Sí"
+
+    nodes: dict = {}
+    edges: list = []
+
+    # Nodo central del proveedor (más grande)
+    nodes[id] = {
+        "id": id, "type": "proveedor", "label": nombre_prv,
+        "semaforo": None, "score": None, "en_lista_restrictiva": en_lista,
+    }
+
+    for _, row in df_prv.iterrows():
+        sin_id  = str(row.get("id_siniestro", ""))
+        ase_id  = str(row.get("id_asegurado", "")) if "id_asegurado" in df_prv.columns else ""
+        sem_val = str(row.get(sem, "Verde"))
+        score_v = row.get("score_motor")
+        score_n = float(score_v) if pd.notna(score_v) else 0.0
+
+        if sin_id and sin_id != "nan":
+            nodes[sin_id] = {
+                "id": sin_id, "type": "siniestro", "label": sin_id,
+                "semaforo": sem_val, "score": score_n, "en_lista_restrictiva": False,
+            }
+            edges.append({"source": id, "target": sin_id, "label": "atendió"})
+
+        if ase_id and ase_id != "nan":
+            if ase_id not in nodes:
+                nodes[ase_id] = {
+                    "id": ase_id, "type": "asegurado", "label": ase_id,
+                    "semaforo": None, "score": None, "en_lista_restrictiva": False,
+                }
+            if sin_id and sin_id != "nan":
+                edges.append({"source": ase_id, "target": sin_id, "label": "titular"})
+
+    return {
+        "nodes":            list(nodes.values()),
+        "edges":            edges,
+        "total_nodos":      len(nodes),
+        "total_aristas":    len(edges),
+        "nombre_proveedor": nombre_prv,
+    }

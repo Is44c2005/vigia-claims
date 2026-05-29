@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, Siniestro } from "../lib/api";
 import { semBgClass, fmtMoney, fmtPct } from "../lib/utils";
@@ -256,9 +256,16 @@ function PanelAlertaAutomatica({ data }: { data: Siniestro }) {
   );
 }
 
-export default function DetalleSiniestro() {
-  const [inputId, setInputId] = useState("");
-  const [buscarId, setBuscarId] = useState("");
+export default function DetalleSiniestro({ initialId = "" }: { initialId?: string }) {
+  const [inputId,  setInputId]  = useState(initialId);
+  const [buscarId, setBuscarId] = useState(initialId);
+
+  useEffect(() => {
+    if (initialId) {
+      setInputId(initialId);
+      setBuscarId(initialId);
+    }
+  }, [initialId]);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["siniestro", buscarId],

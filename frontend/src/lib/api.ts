@@ -59,6 +59,94 @@ export interface GrafoData {
   total_aristas: number;
 }
 
+// ─── Relaciones analíticas ─────────────────────────────────────
+
+export interface ProveedorRanking {
+  id_proveedor:      string;
+  nombre?:           string;
+  tipo?:             string;
+  casos_rojo:        number;
+  casos_amarillo:    number;
+  total_casos:       number;
+  pct_concentracion: number;
+  en_lista?:         string;
+}
+
+export interface AseguradoRanking {
+  id_asegurado:          string;
+  siniestros_criticos:   number;
+  score_maximo?:         number;
+  semaforo_predominante?:string;
+  proveedores_distintos?:number;
+}
+
+export interface RankingProvResp {
+  insight: {
+    top3_pct:        number;
+    top3_count:      number;
+    total_rojos:     number;
+    asegurado_top:   string;
+    asegurado_top_n: number;
+  };
+  metricas: {
+    proveedores_en_alerta:  number;
+    asegurados_recurrentes: number;
+    clusteres_detectados:   number;
+  };
+  tabla_proveedores: ProveedorRanking[];
+  tabla_asegurados:  AseguradoRanking[];
+}
+
+export interface SelectorPrv {
+  id_proveedor: string;
+  nombre?:      string;
+  casos_rojo:   number;
+}
+
+export interface DetalleProvResp {
+  proveedor: {
+    id:                   string;
+    nombre:               string;
+    en_lista_restrictiva: boolean;
+    tipo:                 string;
+  };
+  distribucion: { rojo: number; amarillo: number; verde: number; total: number; };
+  metricas: {
+    monto_total:             number;
+    promedio_por_caso:       number;
+    asegurados_distintos:    number;
+    pct_docs_inconsistentes: number;
+  };
+  senales_frecuentes: Array<{
+    codigo:      string;
+    texto:       string;
+    frecuencia:  number;
+    total_casos: number;
+    es_critica:  boolean;
+  }>;
+  reglas_criticas: Array<{
+    codigo:      string;
+    frecuencia:  number;
+    total_casos: number;
+  }>;
+  siniestros: Array<{
+    id_siniestro:   string;
+    id_asegurado?:  string;
+    cobertura?:     string;
+    monto_reclamado?:number;
+    score_motor?:   number;
+    semaforo_motor?:string;
+  }>;
+}
+
+export interface GrafoClusterResp {
+  nodes:            GrafoNode[];
+  edges:            GrafoEdge[];
+  total_nodos:      number;
+  total_aristas:    number;
+  nombre_proveedor: string;
+}
+
 export interface Proveedor {
   id_proveedor:                 string;
   nombre_proveedor?:            string;
@@ -195,6 +283,13 @@ export const api = {
     if (idProveedor)       p.set("id_proveedor", idProveedor);
     return req<GrafoData>(`/grafo?${p}`);
   },
+
+  relacionesRanking:  () => req<RankingProvResp>("/relaciones/ranking-proveedores"),
+  relacionesSelector: () => req<SelectorPrv[]>("/relaciones/selector-proveedores"),
+  relacionesDetalle:  (id: string) =>
+    req<DetalleProvResp>(`/relaciones/detalle-proveedor?id=${encodeURIComponent(id)}`),
+  relacionesGrafo:    (id: string) =>
+    req<GrafoClusterResp>(`/relaciones/grafo-cluster?id=${encodeURIComponent(id)}`),
 
   reporteAuditoria: async () => {
     const res = await fetch(BASE + "/reporte/csv");
