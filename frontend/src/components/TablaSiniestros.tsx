@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, Filtros, Siniestro } from "../lib/api";
 import { semBgClass, fmtMoney, fmtPct } from "../lib/utils";
@@ -32,6 +33,12 @@ export default function TablaSiniestros({ filtros }: Props) {
 
   const rows: Siniestro[] = data?.data ?? [];
   const total = data?.total ?? 0;
+  const [exportando, setExportando] = useState(false);
+
+  async function exportarReporte() {
+    setExportando(true);
+    try { await api.reporteAuditoria(); } finally { setExportando(false); }
+  }
 
   function exportCSV() {
     if (!rows.length) return;
@@ -52,12 +59,21 @@ export default function TablaSiniestros({ filtros }: Props) {
             ({rows.length} mostrados de {total} totales)
           </span>
         </h2>
-        <button
-          onClick={exportCSV}
-          className="text-xs bg-surface2 hover:bg-surface text-accent px-3 py-1.5 rounded border border-surface2 transition-colors"
-        >
-          Exportar CSV
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={exportarReporte}
+            disabled={exportando}
+            className="text-xs bg-rojo hover:bg-red-700 disabled:opacity-50 text-white font-semibold px-3 py-1.5 rounded transition-colors"
+          >
+            {exportando ? "Generando…" : "📥 Reporte de Auditoría"}
+          </button>
+          <button
+            onClick={exportCSV}
+            className="text-xs bg-surface2 hover:bg-surface text-accent px-3 py-1.5 rounded border border-surface2 transition-colors"
+          >
+            Exportar CSV
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-surface2">

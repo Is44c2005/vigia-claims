@@ -25,14 +25,38 @@ export interface Siniestro {
 }
 
 export interface Estadisticas {
-  total_siniestros:   number;
-  rojos:              number;
-  amarillos:          number;
-  verdes:             number;
-  monto_riesgo_total: number;
-  score_promedio:     number;
-  fraude_confirmado?: number;
-  alto_riesgo_ml?:    number;
+  total_siniestros:      number;
+  rojos:                 number;
+  amarillos:             number;
+  verdes:                number;
+  monto_riesgo_total:    number;
+  monto_riesgo_amarillo?: number;
+  score_promedio:        number;
+  fraude_confirmado?:    number;
+  alto_riesgo_ml?:       number;
+}
+
+export interface GrafoNode {
+  id:                    string;
+  type:                  "siniestro" | "asegurado" | "proveedor" | "vehiculo";
+  label:                 string;
+  semaforo?:             string | null;
+  score?:                number;
+  en_lista_restrictiva?: boolean;
+}
+
+export interface GrafoEdge {
+  source: string;
+  target: string;
+  label:  string;
+}
+
+export interface GrafoData {
+  nodes:         GrafoNode[];
+  edges:         GrafoEdge[];
+  insights:      Record<string, string>;
+  total_nodos:   number;
+  total_aristas: number;
 }
 
 export interface Proveedor {
@@ -157,4 +181,32 @@ export const api = {
     req<{ ok: boolean }>(`/chat/${encodeURIComponent(sessionId)}`, {
       method: "DELETE",
     }),
+
+  grafo: (
+    semaforo     = "Rojo,Amarillo",
+    soloLista    = false,
+    minConexiones = 1,
+    idProveedor  = "",
+    limite       = 300,
+  ) => {
+    const p = new URLSearchParams({ semaforo, limite: String(limite) });
+    if (soloLista)         p.set("solo_lista_restrictiva", "true");
+    if (minConexiones > 1) p.set("min_conexiones", String(minConexiones));
+    if (idProveedor)       p.set("id_proveedor", idProveedor);
+    return req<GrafoData>(`/grafo?${p}`);
+  },
+
+  reporteAuditoria: async () => {
+    const res = await fetch(BASE + "/reporte/csv");
+    if (!res.ok) throw new Error("Error al generar el reporte de auditoría");
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `reporte_auditoria_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
 };

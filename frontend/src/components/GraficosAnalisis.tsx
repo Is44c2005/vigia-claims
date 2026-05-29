@@ -48,7 +48,7 @@ export default function GraficosAnalisis({ filtros }: Props) {
 
   // Transformar ramo data a formato agrupado para stacked bar
   const ramoGrouped: Record<string, Record<string, number>> = {};
-  (ramoData ?? []).forEach(({ ramo, semaforo_motor, cnt }) => {
+  (ramoData ?? []).forEach(({ ramo, semaforo_motor, cnt }: { ramo: string; semaforo_motor: string; cnt: number }) => {
     if (!ramoGrouped[ramo]) ramoGrouped[ramo] = {};
     ramoGrouped[ramo][semaforo_motor] = cnt;
   });
@@ -56,9 +56,9 @@ export default function GraficosAnalisis({ filtros }: Props) {
 
   // Bins de score por semáforo
   const scoreBins = {
-    Rojo:     buildBins((scoreData?.find((s) => s.semaforo === "Rojo")?.scores ?? [])),
-    Amarillo: buildBins((scoreData?.find((s) => s.semaforo === "Amarillo")?.scores ?? [])),
-    Verde:    buildBins((scoreData?.find((s) => s.semaforo === "Verde")?.scores ?? [])),
+    Rojo:     buildBins((scoreData?.find((s: { semaforo: string; scores: number[] }) => s.semaforo ==="Rojo")?.scores ?? [])),
+    Amarillo: buildBins((scoreData?.find((s: { semaforo: string; scores: number[] }) => s.semaforo === "Amarillo")?.scores ?? [])),
+    Verde:    buildBins((scoreData?.find((s: { semaforo: string; scores: number[] }) => s.semaforo ==="Verde")?.scores ?? [])),
   };
   const scoreMerged = scoreBins.Rojo.map((b, i) => ({
     bin:      b.bin,
@@ -68,7 +68,7 @@ export default function GraficosAnalisis({ filtros }: Props) {
   }));
 
   // Proveedores: nombres cortos para el chart
-  const provChartData = (provData ?? []).map((p) => ({
+  const provChartData = (provData ?? []).map((p: { nombre_proveedor?: string; id_proveedor: string; alertas_rojas: number }) => ({
     nombre:  p.nombre_proveedor ?? p.id_proveedor,
     alertas: p.alertas_rojas,
   })).reverse();
@@ -182,7 +182,7 @@ export default function GraficosAnalisis({ filtros }: Props) {
                 <Scatter
                   key={sem}
                   name={sem}
-                  data={mlData.filter((d) => d.semaforo_motor === sem)}
+                  data={mlData.filter((d: { semaforo_motor?: string }) => d.semaforo_motor === sem)}
                   fill={COLORS[sem]}
                   fillOpacity={0.65}
                 />

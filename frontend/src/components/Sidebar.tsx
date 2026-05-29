@@ -67,7 +67,7 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
           className="w-full bg-surface2 text-text text-sm rounded p-1.5 border border-surface2 focus:outline-none"
         >
           <option value="Todos">Todos</option>
-          {opts?.ramos.map((r) => <option key={r}>{r}</option>)}
+          {opts?.ramos.map((r: string) => <option key={r}>{r}</option>)}
         </select>
       </div>
 
@@ -80,7 +80,7 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
           className="w-full bg-surface2 text-text text-sm rounded p-1.5 border border-surface2 focus:outline-none"
         >
           <option value="Todas">Todas</option>
-          {opts?.sucursales.map((s) => <option key={s}>{s}</option>)}
+          {opts?.sucursales.map((s: string) => <option key={s}>{s}</option>)}
         </select>
       </div>
 
@@ -93,7 +93,7 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
           className="w-full bg-surface2 text-text text-sm rounded p-1.5 border border-surface2 focus:outline-none"
         >
           <option value="Todas">Todas</option>
-          {opts?.coberturas.map((c) => <option key={c}>{c}</option>)}
+          {opts?.coberturas.map((c: string) => <option key={c}>{c}</option>)}
         </select>
       </div>
 

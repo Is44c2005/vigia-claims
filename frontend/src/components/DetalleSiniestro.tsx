@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../lib/api";
+import { api, Siniestro } from "../lib/api";
 import { semBgClass, fmtMoney, fmtPct } from "../lib/utils";
 
 interface ExplParsed {
@@ -178,6 +178,84 @@ function ExplicacionMotor({ text, semColor, semBorder }: {
   );
 }
 
+// ─── Panel de alerta automática (Funcionalidad 1) ─────────────
+function PanelAlertaAutomatica({ data }: { data: Siniestro }) {
+  const sem = data?.semaforo_motor as string | undefined;
+  if (!sem || sem === "Verde") return null;
+
+  const esRojo = sem === "Rojo";
+
+  const señales: string[] = data.señales_motor
+    ? String(data.señales_motor).split("|").map((s: string) => s.trim()).filter(Boolean)
+    : [];
+
+  const reglasCriticas: string[] = data.reglas_criticas_activadas
+    ? String(data.reglas_criticas_activadas).split(",").map((r: string) => r.trim()).filter(Boolean)
+    : [];
+
+  const titulo = esRojo
+    ? "ALERTA CRÍTICA — Requiere Revisión Inmediata"
+    : "ALERTA MEDIA — Revisión Documental Requerida";
+
+  const accion = esRojo
+    ? "Escalar INMEDIATAMENTE a Unidad Antifraude. NO proceder con el pago."
+    : "Solicitar documentación adicional y verificar con el proveedor antes de proceder.";
+
+  const panelBg    = esRojo ? "bg-red-950/60"    : "bg-orange-950/60";
+  const borderCls  = esRojo ? "border-rojo"       : "border-amarillo";
+  const titleCls   = esRojo ? "text-red-300"      : "text-orange-300";
+  const badgeBg    = esRojo ? "bg-red-900/60 text-red-200"    : "bg-orange-900/60 text-orange-200";
+  const rulesBg    = esRojo ? "bg-red-800/60 text-red-100 font-bold" : "bg-orange-800/60 text-orange-100 font-bold";
+  const accionCls  = esRojo ? "text-red-200"      : "text-orange-200";
+
+  return (
+    <div className={`rounded-xl border-l-4 ${borderCls} ${panelBg} p-5 space-y-3`}>
+      {/* Título */}
+      <div className="flex items-center gap-2">
+        <span className="text-xl">{esRojo ? "⚠️" : "🟡"}</span>
+        <h3 className={`font-extrabold text-sm uppercase tracking-wide ${titleCls}`}>
+          {titulo}
+        </h3>
+      </div>
+
+      {/* Reglas críticas (destacadas) */}
+      {reglasCriticas.length > 0 && (
+        <div>
+          <p className="text-xs text-[#aaa] uppercase tracking-wider mb-1.5">Reglas Críticas Activadas</p>
+          <div className="flex flex-wrap gap-1.5">
+            {reglasCriticas.map((r) => (
+              <span key={r} className={`text-xs px-2.5 py-1 rounded-full ${rulesBg}`}>
+                {r}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Señales */}
+      {señales.length > 0 && (
+        <div>
+          <p className="text-xs text-[#aaa] uppercase tracking-wider mb-1.5">
+            Señales Detectadas ({señales.length})
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {señales.map((s) => (
+              <span key={s} className={`text-xs px-2.5 py-1 rounded-full ${badgeBg}`}>
+                {s}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Acción */}
+      <div className={`text-sm font-semibold border-t ${borderCls} pt-3 ${accionCls}`}>
+        → {accion}
+      </div>
+    </div>
+  );
+}
+
 export default function DetalleSiniestro() {
   const [inputId, setInputId] = useState("");
   const [buscarId, setBuscarId] = useState("");
@@ -227,6 +305,8 @@ export default function DetalleSiniestro() {
       )}
 
       {data && (
+        <div className="space-y-4">
+        <PanelAlertaAutomatica data={data} />
         <div className={`rounded-xl border-l-4 ${colorBorder} bg-surface p-6 space-y-5`}>
           {/* Header */}
           <div className="flex flex-wrap items-center gap-3">
@@ -337,6 +417,7 @@ export default function DetalleSiniestro() {
               </p>
             </details>
           )}
+        </div>
         </div>
       )}
     </div>

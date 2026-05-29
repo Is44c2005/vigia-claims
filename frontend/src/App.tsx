@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, Filtros, DEFAULT_FILTROS } from "./lib/api";
-import { fmt, fmtMoney } from "./lib/utils";
+import { fmt } from "./lib/utils";
 import Sidebar           from "./components/Sidebar";
 import MetricCard        from "./components/MetricCard";
 import TablaSiniestros   from "./components/TablaSiniestros";
@@ -9,11 +9,14 @@ import DetalleSiniestro  from "./components/DetalleSiniestro";
 import GraficosAnalisis  from "./components/GraficosAnalisis";
 import AnalizarNuevo     from "./components/AnalizarNuevo";
 import ChatIA            from "./components/ChatIA";
+import RedRelaciones     from "./components/RedRelaciones";
+import AhorroPotencial   from "./components/AhorroPotencial";
 
 const TABS = [
   { id: "panel",    label: "Panel Principal" },
   { id: "detalle",  label: "Detalle Siniestro" },
   { id: "graficos", label: "Análisis Visual" },
+  { id: "red",      label: "Red de Relaciones" },
   { id: "nuevo",    label: "Analizar Nuevo" },
   { id: "chat",     label: "Chat con IA" },
 ] as const;
@@ -99,9 +102,15 @@ export default function App() {
 
         {/* Contenido */}
         <div className="px-8 py-6">
-          {tab === "panel"    && <TablaSiniestros  filtros={filtros} />}
+          {tab === "panel" && (
+            <div className="space-y-6">
+              {stats && <AhorroPotencial stats={stats} />}
+              <TablaSiniestros filtros={filtros} />
+            </div>
+          )}
           {tab === "detalle"  && <DetalleSiniestro />}
           {tab === "graficos" && <GraficosAnalisis filtros={filtros} />}
+          {tab === "red"      && <RedRelaciones />}
           {tab === "nuevo"    && <AnalizarNuevo />}
           {tab === "chat"     && <ChatIA />}
         </div>

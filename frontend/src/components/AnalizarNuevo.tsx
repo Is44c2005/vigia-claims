@@ -86,7 +86,7 @@ export default function AnalizarNuevo() {
   const semBorderColor =
     sem === "Rojo" ? "border-rojo" : sem === "Amarillo" ? "border-amarillo" : "border-verde";
 
-  const parsed = result?.explicacion_alerta
+  const parsed: ReturnType<typeof parseExplicacion> | null = result?.explicacion_alerta
     ? parseExplicacion(String(result.explicacion_alerta))
     : null;
 
@@ -197,7 +197,7 @@ export default function AnalizarNuevo() {
           </div>
 
           {/* Señales en lenguaje natural */}
-          {parsed && parsed.signals.length > 0 && (
+          {parsed != null && parsed.signals.length > 0 ? (
             <div className="bg-[#162035] rounded-lg p-4">
               <p className="text-accent text-xs uppercase tracking-wider mb-3 font-semibold">
                 Señales detectadas ({parsed.signals.length})
@@ -211,7 +211,7 @@ export default function AnalizarNuevo() {
                 ))}
               </ul>
             </div>
-          )}
+          ) : null}
 
           {parsed && parsed.signals.length === 0 && (
             <div className="bg-[#162035] rounded-lg p-4">
@@ -220,7 +220,7 @@ export default function AnalizarNuevo() {
           )}
 
           {/* Reglas críticas */}
-          {result.reglas_criticas_activadas && String(result.reglas_criticas_activadas).trim() !== "" && (
+          {!!result.reglas_criticas_activadas && String(result.reglas_criticas_activadas).trim() !== "" && (
             <div className="bg-[#162035] rounded-lg p-4">
               <p className="text-accent text-xs uppercase tracking-wider mb-2 font-semibold">Reglas críticas activadas</p>
               <div className="flex flex-wrap gap-1">
