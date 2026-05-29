@@ -242,4 +242,46 @@ Preguntas de ejemplo:
 
 ---
 
+## Demo en vivo
+
+URL del sistema desplegado: [URL de Render aquí]
+
+---
+
+## Modelo de datos
+
+Dataset sintético de ~1,000 siniestros distribuido en 6 tablas:
+
+| Tabla | Registros | Descripción |
+|-------|-----------|-------------|
+| siniestros.csv | ~1,000 | Tabla principal con score, semáforo y señales |
+| polizas.csv | ~300 | Pólizas con fechas de vigencia y suma asegurada |
+| asegurados.csv | ~250 | Perfil y historial de reclamos del asegurado |
+| vehiculos.csv | ~400 | Placa, chasis, marca, modelo y siniestros en 18m |
+| proveedores.csv | ~60 | Talleres, clínicas y peritos con % casos observados |
+| documentos.csv | ~2,983 | Documentos por siniestro con inconsistencias |
+
+Outputs generados por el pipeline:
+- siniestros_analizados.csv — resultado del motor de reglas
+- siniestros_con_ml.csv — agrega probabilidad del modelo ML
+- best_fraud_model.pkl — modelo Random Forest serializado
+
+---
+
+## Limitaciones y consideraciones
+
+- El dataset es 100% sintético. El modelo no ha sido validado
+  con datos reales de siniestros.
+- El AUC-ROC de 0.93 fue medido sobre datos sintéticos
+  generados con las mismas reglas del motor — puede
+  sobreestimar el rendimiento real.
+- El agente conversacional depende de OpenAI GPT-4o.
+  Si la API no está disponible, el Tab de Chat no funciona.
+- El sistema genera alertas de revisión. Existe riesgo de
+  falsos positivos — el analista humano debe validar cada caso.
+- El modelo no detecta fraudes sofisticados que no activen
+  ninguna de las 21 señales definidas.
+
+---
+
 *hackIAthon 2026 · Equipo VigIA · Aseguradora del Sur · Ecuador*
