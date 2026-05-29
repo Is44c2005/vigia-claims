@@ -45,7 +45,7 @@ export default function App() {
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <header className="border-b border-surface2 px-8 py-4">
-          <h1 className="text-2xl font-extrabold text-rojo leading-none">
+          <h1 className="text-2xl font-extrabold text-white leading-none">
             VigIA — Detector de Posibles Fraudes
           </h1>
           <p className="text-accent text-xs mt-1">

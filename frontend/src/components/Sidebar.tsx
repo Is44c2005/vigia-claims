@@ -29,7 +29,7 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
     <aside className="w-56 shrink-0 bg-[#12192b] border-r border-surface2 flex flex-col min-h-screen p-4 gap-5">
       {/* Logo */}
       <div className="py-2">
-        <img src="/logo.png" alt="VigIA" className="w-full h-auto object-contain" />
+        <img src="/logo.png" alt="VigIA" className="w-full h-auto object-contain scale-125 origin-left" />
       </div>
 
       <hr className="border-surface2" />
