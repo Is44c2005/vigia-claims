@@ -32,7 +32,7 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
         <img
           src="/logo.png"
           alt="VigIA"
-          className="w-full h-auto scale-[2.2] origin-center"
+          className="w-full h-auto scale-[1.7] origin-center"
           style={{ mixBlendMode: "screen" }}
         />
       </div>
