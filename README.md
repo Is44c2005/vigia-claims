@@ -119,7 +119,7 @@ python src/utils/export_report.py
 ### Panel Principal
 Tabla filtrable de siniestros con score de riesgo, semáforo, reglas críticas activadas
 y probabilidad del modelo ML. Incluye dos botones de exportación:
-- **Exportar CSV**: descarga los siniestros actualmente filtrados.
+- **Exportar CSV**: descarga los siniestros actualmente filtrados. El nombre del archivo refleja los filtros activos (ej. `siniestros_rojo_vehiculos_score60-100_2026-05-29.csv`).
 - **Reporte de Auditoría**: descarga un CSV de casos Rojo+Amarillo ordenados por
   score descendente, con las 17 columnas clave para revisión de fraude.
 
