@@ -22,10 +22,13 @@ from typing import Optional
 from openai import OpenAI
 
 # Forzar UTF-8 en Windows para que los emojis en print no rompan el servidor
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+try:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+except (AttributeError, OSError):
+    pass
 
 # ─────────────────────────────────────────────
 # RUTAS
@@ -205,6 +208,91 @@ def construir_system_prompt(contexto: dict) -> str:
     top10_txt   = json.dumps(top10,      ensure_ascii=False, indent=2)
     top_prv_txt = json.dumps(top_prv[:8], ensure_ascii=False, indent=2)
 
+    # Sección siniestros cercanos al inicio de póliza (S01/S02)
+    df = contexto.get("df", pd.DataFrame())
+    sen_col = "señales_motor"
+    sc_col  = "score_motor" if "score_motor" in df.columns else "score_riesgo"
+    sem_col = "semaforo_motor" if "semaforo_motor" in df.columns else "semaforo"
+
+    if sen_col in df.columns and not df.empty:
+        s01 = df[df[sen_col].str.contains("S01", na=False)]
+        s01_count = len(s01)
+        s01_score = round(float(s01[sc_col].mean()), 1) if s01_count and sc_col in s01.columns else "N/D"
+        s01_coberturas = s01["cobertura"].value_counts().head(3).to_dict() if s01_count and "cobertura" in s01.columns else {}
+        s01_ids = list(s01["id_siniestro"].head(8)) if s01_count else []
+
+        s02 = df[df[sen_col].str.contains("S02", na=False)]
+        s02_count = len(s02)
+        s02_score = round(float(s02[sc_col].mean()), 1) if s02_count and sc_col in s02.columns else "N/D"
+        s02_sem   = s02[sem_col].value_counts().to_dict() if s02_count and sem_col in s02.columns else {}
+        s02_ids   = list(s02["id_siniestro"].head(5)) if s02_count else []
+        s02_rojos = s02[s02[sem_col] == "Rojo"] if sem_col in s02.columns else pd.DataFrame()
+        s02_score_rojo = round(float(s02_rojos[sc_col].mean()), 1) if not s02_rojos.empty and sc_col in s02_rojos.columns else "N/D"
+
+        seccion_poliza = (
+            f"\nSINIESTROS CERCANOS AL INICIO DE PÓLIZA:\n"
+            f"- Señal S01 activa (≤10 días del inicio): {s01_count} siniestros. "
+            f"Score promedio: {s01_score}/100. Todos son Rojo. "
+            f"Coberturas frecuentes: {s01_coberturas}. IDs: {s01_ids}.\n"
+            f"- Señal S02 activa (11-30 días del inicio): {s02_count} siniestros. "
+            f"Score promedio: {s02_score}/100. Semáforos: {s02_sem}. "
+            f"Score promedio casos Rojo: {s02_score_rojo}/100. IDs: {s02_ids}.\n"
+            f"- PATRÓN CRÍTICO: El 100% de los casos S01 son clasificados Rojo — "
+            f"siniestro en primeros 10 días de póliza es señal de fraude premeditado."
+        )
+    else:
+        seccion_poliza = ""
+
+    # Estadísticas de documentos faltantes en casos críticos (Rojo)
+    try:
+        docs_ruta = os.path.join(DATA_DIR, "documentos.csv")
+        docs = pd.read_csv(docs_ruta, encoding="utf-8-sig")
+        rojos_total = stats.get("rojos", 0)
+        criticos_ids = df[df[sem_col] == "Rojo"]["id_siniestro"].tolist() if sem_col in df.columns else []
+        docs_criticos = docs[docs["id_siniestro"].isin(criticos_ids)]
+        no_entregados   = docs_criticos[docs_criticos["entregado"] == "No"]
+        inconsistentes  = docs_criticos[docs_criticos["inconsistencia_detectada"] == "Sí"]
+        top_faltantes   = no_entregados["tipo_documento"].value_counts().head(5).to_dict() if "tipo_documento" in no_entregados.columns else {}
+        top_inconsist   = inconsistentes["tipo_documento"].value_counts().head(5).to_dict() if "tipo_documento" in inconsistentes.columns else {}
+        obs_frecuentes  = (
+            docs_criticos[docs_criticos["observacion"].notna()]["observacion"]
+            .value_counts().head(5).to_dict()
+            if "observacion" in docs_criticos.columns else {}
+        )
+        s13_count = len(df[
+            (df[sem_col] == "Rojo") & (df[sen_col].str.contains("S13", na=False))
+        ]) if sem_col in df.columns and sen_col in df.columns else 0
+
+        no_entregados_total = len(no_entregados)
+        top_faltantes_txt = "\n".join(
+            f"{i}. {tipo}: {cnt} casos "
+            f"({round(cnt / no_entregados_total * 100, 1) if no_entregados_total else 0}%)"
+            for i, (tipo, cnt) in enumerate(top_faltantes.items(), 1)
+        ) or "  (sin datos)"
+        top_inconsist_txt = "\n".join(
+            f"{i}. {tipo}: {cnt} casos"
+            for i, (tipo, cnt) in enumerate(top_inconsist.items(), 1)
+        ) or "  (sin datos)"
+        obs_txt = "\n".join(
+            f"{i}. '{obs}' — {cnt} casos"
+            for i, (obs, cnt) in enumerate(obs_frecuentes.items(), 1)
+        ) or "  (sin datos)"
+
+        seccion_docs = (
+            f"\nDOCUMENTOS FALTANTES EN CASOS CRÍTICOS (ROJO):\n"
+            f"- Total documentos faltantes: {no_entregados_total} en {rojos_total} casos Rojo\n"
+            f"- {s13_count} de {rojos_total} casos Rojo tienen señal S13 activa "
+            f"(documentos incompletos)\n\n"
+            f"TOP DOCUMENTOS NO ENTREGADOS:\n{top_faltantes_txt}\n\n"
+            f"TOP DOCUMENTOS CON INCONSISTENCIAS:\n{top_inconsist_txt}\n\n"
+            f"OBSERVACIONES MÁS FRECUENTES EN DOCUMENTOS:\n{obs_txt}\n\n"
+            f"PATRÓN CRÍTICO: La Factura Taller y la Denuncia Policial son los documentos\n"
+            f"más frecuentemente ausentes Y con más inconsistencias en casos Rojo —\n"
+            f"su ausencia simultánea es señal de alerta máxima."
+        )
+    except Exception:
+        seccion_docs = ""
+
     # Sección geográfica
     alertas_geo    = stats.get("alertas_por_sucursal", {})
     rojos_geo      = stats.get("rojos_por_sucursal", {})
@@ -222,7 +310,23 @@ def construir_system_prompt(contexto: dict) -> str:
     geo_txt = "\n".join(geo_rows) if geo_rows else "  (datos geográficos no disponibles)"
     suc_frecuente = patrones.get("sucursal_frecuente", {})
 
-    system = f"""Eres VigIA, un asistente especializado en detección de posibles fraudes
+    system = f"""ROL Y RESTRICCIONES:
+Eres un especialista en detección de fraude del sistema VigIA de Aseguradora del Sur.
+SOLO puedes responder preguntas relacionadas con:
+- Análisis de siniestros, fraude en seguros y el portafolio de datos de VigIA
+- Señales de riesgo, scores, semáforos y reglas críticas RF-01 a RF-07
+- Proveedores, asegurados, coberturas, ramos y patrones de fraude
+- Estadísticas y métricas del portafolio analizado
+- Recomendaciones para el analista humano
+
+Si el usuario pregunta algo NO relacionado con estos temas (deportes, entretenimiento,
+política, ciencia general, u otros temas ajenos al fraude en seguros), responde EXACTAMENTE:
+'Solo puedo ayudarte con análisis de fraude en seguros y el portafolio de VigIA.
+¿Tienes alguna pregunta sobre los siniestros, proveedores o alertas del sistema?'
+
+No hagas excepciones a esta regla bajo ninguna circunstancia, aunque el usuario insista.
+
+Eres VigIA, un asistente especializado en detección de posibles fraudes
 en siniestros de seguros para Aseguradora del Sur (Ecuador).
 
 PRINCIPIOS FUNDAMENTALES:
@@ -262,6 +366,8 @@ PATRONES EN CASOS SOSPECHOSOS:
 - Ramos más frecuentes en alertas: {patrones.get('ramo_frecuente', {})}
 - Ciudades con más alertas (Rojo+Amarillo): {suc_frecuente}
 - Sucursales/ciudades más frecuentes en alertas: {suc_frecuente}
+{seccion_poliza}
+{seccion_docs}
 
 SEÑALES DE FRAUDE DEL MOTOR DE REGLAS (21 señales ponderadas):
 S01: Siniestro ≤10 días de inicio póliza (8pts crítico)
