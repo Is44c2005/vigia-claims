@@ -41,13 +41,26 @@ export default function TablaSiniestros({ filtros }: Props) {
     try { await api.reporteAuditoria(); } finally { setExportando(false); }
   }
 
+  function buildFilename() {
+    const parts: string[] = ["siniestros"];
+    if (filtros.semaforo.length < 3)
+      parts.push(filtros.semaforo.map((s) => s.toLowerCase()).join("-"));
+    if (filtros.ramo      !== "Todos")  parts.push(filtros.ramo.toLowerCase().replace(/\s+/g, "_"));
+    if (filtros.sucursal  !== "Todas")  parts.push(filtros.sucursal.toLowerCase().replace(/\s+/g, "_"));
+    if (filtros.cobertura !== "Todas")  parts.push(filtros.cobertura.toLowerCase().replace(/\s+/g, "_"));
+    if (filtros.scoreMin > 0 || filtros.scoreMax < 100)
+      parts.push(`score${filtros.scoreMin}-${filtros.scoreMax}`);
+    parts.push(new Date().toISOString().slice(0, 10));
+    return parts.join("_") + ".csv";
+  }
+
   function exportCSV() {
     if (!rows.length) return;
     const cols = Object.keys(rows[0]);
     const csv  = [cols.join(","), ...rows.map((r) => cols.map((c) => r[c] ?? "").join(","))].join("\n");
     const a    = document.createElement("a");
     a.href     = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-    a.download = "siniestros_filtrados.csv";
+    a.download = buildFilename();
     a.click();
   }
 
