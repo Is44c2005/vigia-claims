@@ -28,8 +28,13 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
   return (
     <aside className="w-56 shrink-0 bg-[#12192b] border-r border-surface2 flex flex-col min-h-screen p-4 gap-5">
       {/* Logo */}
-      <div className="-mx-4 overflow-hidden h-20 flex items-center justify-center">
-        <img src="/logo.png" alt="VigIA" className="w-full h-auto scale-[2.8] origin-center" />
+      <div className="-mx-4 overflow-hidden h-24 flex items-center justify-center">
+        <img
+          src="/logo.png"
+          alt="VigIA"
+          className="w-full h-auto scale-[2.2] origin-center"
+          style={{ mixBlendMode: "screen" }}
+        />
       </div>
 
       <hr className="border-surface2" />
