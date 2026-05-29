@@ -28,11 +28,8 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
   return (
     <aside className="w-56 shrink-0 bg-[#12192b] border-r border-surface2 flex flex-col min-h-screen p-4 gap-5">
       {/* Logo */}
-      <div className="flex items-center gap-2 py-2">
-        <div>
-          <p className="text-text font-bold text-lg leading-none">VigIA</p>
-          <p className="text-accent text-[10px] uppercase tracking-widest">Detector de Fraudes</p>
-        </div>
+      <div className="py-2">
+        <img src="/logo.png" alt="VigIA" className="w-full h-auto object-contain" />
       </div>
 
       <hr className="border-surface2" />

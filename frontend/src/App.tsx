@@ -44,13 +44,11 @@ export default function App() {
 
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
-        <header className="border-b border-surface2 px-8 py-3 flex items-center gap-4">
-          <img
-            src="/logo.png"
-            alt="VigIA — Detector de Fraudes"
-            className="h-12 w-auto object-contain"
-          />
-          <p className="text-accent text-xs">
+        <header className="border-b border-surface2 px-8 py-4">
+          <h1 className="text-2xl font-extrabold text-rojo leading-none">
+            VigIA — Detector de Posibles Fraudes
+          </h1>
+          <p className="text-accent text-xs mt-1">
             hackIAthon 2026 · Aseguradora del Sur · Sistema de Alertas de Revisión
           </p>
         </header>
