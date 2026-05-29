@@ -20,12 +20,20 @@ La decisión final **siempre es humana**. Todos los datos son 100% sintéticos.
 ```
 vigia-claims/
 ├── backend/
-│   ├── main.py              ← API REST con FastAPI (12 endpoints)
+│   ├── main.py              ← API REST con FastAPI (14 endpoints)
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── App.tsx          ← Navegación por tabs
-│   │   ├── components/      ← Panel, Detalle, Gráficos, Analizar, Chat
+│   │   ├── App.tsx          ← Navegación por tabs (6 vistas)
+│   │   ├── components/
+│   │   │   ├── AhorroPotencial.tsx   ← Simulación de ahorro potencial
+│   │   │   ├── AnalizarNuevo.tsx     ← Evaluación de siniestros en tiempo real
+│   │   │   ├── ChatIA.tsx            ← Agente conversacional
+│   │   │   ├── DetalleSiniestro.tsx  ← Detalle + panel de alerta automática
+│   │   │   ├── GraficosAnalisis.tsx  ← 5 gráficos interactivos
+│   │   │   ├── RedRelaciones.tsx     ← Red de relaciones (grafo de fuerza)
+│   │   │   ├── Sidebar.tsx           ← Filtros globales
+│   │   │   └── TablaSiniestros.tsx   ← Tabla + exportación CSV/reporte
 │   │   └── lib/             ← Cliente API + utilidades
 │   ├── package.json
 │   └── vite.config.ts       ← Proxy /api → backend
@@ -34,8 +42,10 @@ vigia-claims/
 │   │   └── fraud_rules.py   ← Motor de reglas (21 señales + 7 RF)
 │   ├── models/
 │   │   └── fraud_model.py   ← Entrenamiento ML (Random Forest)
-│   └── ai_agent/
-│       └── claims_agent.py  ← Agente VigIA (GPT-4o)
+│   ├── ai_agent/
+│   │   └── claims_agent.py  ← Agente VigIA (GPT-4o)
+│   └── utils/
+│       └── export_report.py ← Generador de PDF de auditoría (CLI, fpdf2)
 ├── data/
 │   ├── synthetic/           ← 6 CSVs del dataset (~1,000 siniestros)
 │   └── processed/           ← Outputs del motor y del modelo ML
@@ -51,9 +61,11 @@ vigia-claims/
 |------|-----------|
 | Frontend | React 18 + TypeScript + Vite 5 + Tailwind CSS |
 | Datos/estado | TanStack Query v5 + Recharts |
+| Grafo de relaciones | react-force-graph-2d (Canvas, d3-force) |
 | Backend | FastAPI + Uvicorn + Pandas + NumPy |
 | IA | OpenAI GPT-4o |
 | ML | Scikit-learn (Random Forest, AUC-ROC: 0.93) |
+| Exportación | StreamingResponse CSV · fpdf2 PDF (CLI) |
 | Despliegue | Render (backend) |
 
 ---
@@ -93,26 +105,61 @@ npm run dev
 
 > En Windows, ejecutar antes: `$env:PYTHONIOENCODING="utf-8"`
 
+### 5. (Opcional) Generar reporte PDF de auditoría
+```bash
+pip install fpdf2
+python src/utils/export_report.py
+# Genera reporte_auditoria_YYYY-MM-DD.pdf en el directorio actual
+```
+
 ---
 
 ## Funcionalidades
 
 ### Panel Principal
 Tabla filtrable de siniestros con score de riesgo, semáforo, reglas críticas activadas
-y probabilidad del modelo ML. Exportación a CSV.
+y probabilidad del modelo ML. Incluye dos botones de exportación:
+- **Exportar CSV**: descarga los siniestros actualmente filtrados.
+- **Reporte de Auditoría**: descarga un CSV de casos Rojo+Amarillo ordenados por
+  score descendente, con las 17 columnas clave para revisión de fraude.
+
+Encima de la tabla, tarjetas de **Simulación de Ahorro Potencial** muestran:
+monto en riesgo alto (Rojo), monto en riesgo medio (Amarillo), casos para revisión
+inmediata, ahorro estimado conservador (35 %) y optimista (60 %).
 
 ### Detalle de Siniestro
-Búsqueda por ID. Muestra métricas clave, señales detectadas como badges
-y explicación estructurada del motor de reglas con secciones: Información
-General, Reglas Críticas Activadas, Señales Detectadas y Acción Recomendada.
+Búsqueda por ID. Cuando el semáforo es Rojo o Amarillo, muestra **automáticamente**
+un panel de alerta antes del detalle con:
+- Título de alerta con nivel de urgencia
+- Reglas críticas activadas como badges
+- Señales detectadas como badges
+- Acción recomendada resaltada
+
+Debajo, las métricas clave, señales detectadas, probabilidad ML y explicación
+estructurada del motor de reglas (colapsable).
 
 ### Análisis Visual
 Cinco gráficos interactivos:
-- Distribución del semáforo de riesgo (donut con colores correctos por nombre)
-- Histograma de scores por nivel de riesgo
-- Top proveedores con más alertas rojas
+- Distribución del semáforo de riesgo (donut)
+- Histograma de scores por nivel de riesgo (barras apiladas)
+- Top proveedores con más alertas rojas (barras horizontales)
 - Siniestros por ramo y nivel de riesgo (barras apiladas)
 - Scatter motor de reglas vs modelo ML (cuando hay datos ML)
+
+### Red de Relaciones
+Grafo de fuerza interactivo (Canvas) que visualiza las conexiones entre:
+asegurados, proveedores, vehículos y siniestros. Cada tipo de nodo tiene color
+propio; los siniestros se colorean por semáforo y los proveedores en lista
+restrictiva aparecen en rojo intenso.
+
+Filtros disponibles:
+- Semáforo (Críticos / Solo Rojo / Todos)
+- Mínimo de conexiones (slider 1–5)
+- Solo proveedores en lista restrictiva
+- Filtrar por ID de proveedor
+
+Panel lateral muestra conteo de nodos/conexiones e insight automático sobre
+el proveedor más conectado en el filtro actual.
 
 ### Analizar Nuevo
 Formulario para evaluar un siniestro nuevo en tiempo real. El resultado muestra

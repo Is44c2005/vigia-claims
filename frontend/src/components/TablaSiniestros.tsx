@@ -15,6 +15,8 @@ function ScoreBadge({ score }: { score?: number }) {
 }
 
 export default function TablaSiniestros({ filtros }: Props) {
+  const [exportando, setExportando] = useState(false);
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["siniestros", filtros],
     queryFn:  () => api.siniestros(filtros),
@@ -33,7 +35,6 @@ export default function TablaSiniestros({ filtros }: Props) {
 
   const rows: Siniestro[] = data?.data ?? [];
   const total = data?.total ?? 0;
-  const [exportando, setExportando] = useState(false);
 
   async function exportarReporte() {
     setExportando(true);
