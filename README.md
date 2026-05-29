@@ -20,7 +20,7 @@ La decisión final **siempre es humana**. Todos los datos son 100% sintéticos.
 ```
 vigia-claims/
 ├── backend/
-│   ├── main.py              ← API REST con FastAPI (14 endpoints)
+│   ├── main.py              ← API REST con FastAPI (18 endpoints)
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
@@ -31,7 +31,7 @@ vigia-claims/
 │   │   │   ├── ChatIA.tsx            ← Agente conversacional
 │   │   │   ├── DetalleSiniestro.tsx  ← Detalle + panel de alerta automática
 │   │   │   ├── GraficosAnalisis.tsx  ← 5 gráficos interactivos
-│   │   │   ├── RedRelaciones.tsx     ← Red de relaciones (grafo de fuerza)
+│   │   │   ├── RedRelaciones.tsx     ← Red de relaciones (3 tabs: ranking, detalle, grafo)
 │   │   │   ├── Sidebar.tsx           ← Filtros globales
 │   │   │   └── TablaSiniestros.tsx   ← Tabla + exportación CSV/reporte
 │   │   └── lib/             ← Cliente API + utilidades
@@ -147,19 +147,29 @@ Cinco gráficos interactivos:
 - Scatter motor de reglas vs modelo ML (cuando hay datos ML)
 
 ### Red de Relaciones
-Grafo de fuerza interactivo (Canvas) que visualiza las conexiones entre:
-asegurados, proveedores, vehículos y siniestros. Cada tipo de nodo tiene color
-propio; los siniestros se colorean por semáforo y los proveedores en lista
-restrictiva aparecen en rojo intenso.
+Vista analítica de tres pestañas para detectar patrones de riesgo entre proveedores y asegurados:
 
-Filtros disponibles:
-- Semáforo (Críticos / Solo Rojo / Todos)
-- Mínimo de conexiones (slider 1–5)
-- Solo proveedores en lista restrictiva
-- Filtrar por ID de proveedor
+**Pestaña 1 — Ranking de Riesgo**
+- Banner de insight automático: concentración de casos Rojo en el top-3 de proveedores
+- Tarjetas de métricas: proveedores en alerta, asegurados recurrentes, clústeres detectados
+- Tabla de proveedores ordenada por casos rojos con barra de concentración
+- Tabla de asegurados con mayor criticidad y badge de semáforo predominante
+- Click en proveedor navega directamente a su pestaña de Detalle
 
-Panel lateral muestra conteo de nodos/conexiones e insight automático sobre
-el proveedor más conectado en el filtro actual.
+**Pestaña 2 — Detalle Proveedor**
+- Selector de proveedor (pre-cargado al primero por defecto)
+- Badge de lista restrictiva cuando aplica
+- Barras de distribución Rojo / Amarillo / Verde del proveedor
+- Grid de métricas: monto total, promedio por caso, asegurados distintos, % docs inconsistentes
+- Señales frecuentes con indicador de criticidad y frecuencia relativa
+- Reglas críticas activadas (RF-xx) con chips morados
+- Tabla paginada de siniestros; click en ID navega a la vista Detalle Siniestro
+
+**Pestaña 3 — Grafo de Clúster**
+- Grafo de fuerza (Canvas, react-force-graph-2d) del clúster del proveedor seleccionado
+- Muestra hasta 25 nodos: siniestro, asegurado, proveedor, vehículo
+- Click en nodo tipo siniestro navega a Detalle Siniestro
+- Leyenda estática de colores por tipo de nodo y nivel de riesgo
 
 ### Analizar Nuevo
 Formulario para evaluar un siniestro nuevo en tiempo real. El resultado muestra
