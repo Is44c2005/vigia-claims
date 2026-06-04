@@ -44,16 +44,21 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
         <p className="text-accent text-xs font-semibold uppercase tracking-wider mb-2">Nivel de Riesgo</p>
         {SEMAFOROS.map((s) => {
           const checked = filtros.semaforo.includes(s);
-          const dot = s === "Rojo" ? "bg-rojo" : s === "Amarillo" ? "bg-amarillo" : "bg-verde";
+          const color = s === "Rojo" ? "#e63946" : s === "Amarillo" ? "#f4a261" : "#2a9d8f";
           return (
-            <label key={s} className="flex items-center gap-2 py-1 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => toggleSem(s)}
-                className="accent-rojo"
-              />
-              <span className={`w-2.5 h-2.5 rounded-full ${dot}`} />
+            <label key={s} className="flex items-center gap-2.5 py-1.5 cursor-pointer select-none">
+              <input type="checkbox" checked={checked} onChange={() => toggleSem(s)} className="sr-only" />
+              <div
+                className="w-4 h-4 rounded-sm border-2 flex items-center justify-center transition-all shrink-0"
+                style={{ backgroundColor: checked ? color : "transparent", borderColor: color }}
+              >
+                {checked && (
+                  <svg viewBox="0 0 10 8" fill="none" stroke="white" strokeWidth="2.5"
+                    strokeLinecap="round" strokeLinejoin="round" className="w-2.5 h-2.5">
+                    <polyline points="1,4 4,7 9,1" />
+                  </svg>
+                )}
+              </div>
               <span className="text-text text-sm">{s}</span>
             </label>
           );
