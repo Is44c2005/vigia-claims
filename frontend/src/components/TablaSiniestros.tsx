@@ -4,7 +4,8 @@ import { api, Filtros, Siniestro } from "../lib/api";
 import { semBgClass, fmtMoney, fmtPct } from "../lib/utils";
 
 interface Props {
-  filtros: Filtros;
+  filtros:              Filtros;
+  onNavigateToDetalle?: (id: string) => void;
 }
 
 function ScoreBadge({ score }: { score?: number }) {
@@ -14,7 +15,7 @@ function ScoreBadge({ score }: { score?: number }) {
   return <span className={`font-bold ${cls}`}>{score}</span>;
 }
 
-export default function TablaSiniestros({ filtros }: Props) {
+export default function TablaSiniestros({ filtros, onNavigateToDetalle }: Props) {
   const [exportando, setExportando] = useState(false);
 
   const { data, isLoading, isError } = useQuery({
@@ -107,7 +108,8 @@ export default function TablaSiniestros({ filtros }: Props) {
             {rows.map((r, i) => (
               <tr
                 key={r.id_siniestro + i}
-                className="border-t border-surface2 table-row-hover transition-colors"
+                onClick={() => onNavigateToDetalle?.(r.id_siniestro)}
+                className={`border-t border-surface2 table-row-hover transition-colors ${onNavigateToDetalle ? "cursor-pointer hover:bg-surface" : ""}`}
               >
                 <td className="px-4 py-2.5 font-mono text-xs text-accent whitespace-nowrap">
                   {r.id_siniestro}

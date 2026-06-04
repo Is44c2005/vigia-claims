@@ -111,7 +111,7 @@ export default function App() {
           {tab === "panel" && (
             <div className="space-y-6">
               {stats && <AhorroPotencial stats={stats} />}
-              <TablaSiniestros filtros={filtros} />
+              <TablaSiniestros filtros={filtros} onNavigateToDetalle={navigateToDetalle} />
             </div>
           )}
           {tab === "detalle"  && <DetalleSiniestro initialId={detalleId} />}

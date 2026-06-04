@@ -101,19 +101,48 @@ export default function Sidebar({ filtros, onChange }: SidebarProps) {
 
       {/* Score */}
       <div>
-        <p className="text-accent text-xs font-semibold uppercase tracking-wider mb-1">
+        <style>{`
+          .dual-thumb {
+            position: absolute; left: 0; top: 0;
+            width: 100%; height: 100%;
+            -webkit-appearance: none; appearance: none;
+            background: transparent; pointer-events: none; outline: none;
+          }
+          .dual-thumb::-webkit-slider-runnable-track { background: transparent; }
+          .dual-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none; pointer-events: all; cursor: pointer;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: #e63946; border: 2px solid #12192b;
+          }
+          .dual-thumb::-moz-range-track { background: transparent; }
+          .dual-thumb::-moz-range-thumb {
+            pointer-events: all; cursor: pointer;
+            width: 10px; height: 10px; border-radius: 50%;
+            background: #e63946; border: 2px solid #12192b; box-sizing: border-box;
+          }
+        `}</style>
+        <p className="text-accent text-xs font-semibold uppercase tracking-wider mb-2">
           Score: {filtros.scoreMin} – {filtros.scoreMax}
         </p>
-        <input
-          type="range" min={0} max={100} value={filtros.scoreMin}
-          onChange={(e) => onChange({ ...filtros, scoreMin: Number(e.target.value) })}
-          className="w-full accent-rojo"
-        />
-        <input
-          type="range" min={0} max={100} value={filtros.scoreMax}
-          onChange={(e) => onChange({ ...filtros, scoreMax: Number(e.target.value) })}
-          className="w-full accent-rojo"
-        />
+        <div className="relative h-5">
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-surface2 pointer-events-none" />
+          <div
+            className="absolute top-1/2 -translate-y-1/2 h-1.5 rounded-full bg-rojo pointer-events-none"
+            style={{ left: `${filtros.scoreMin}%`, right: `${100 - filtros.scoreMax}%` }}
+          />
+          <input
+            type="range" min={0} max={100} value={filtros.scoreMin}
+            onChange={(e) => onChange({ ...filtros, scoreMin: Math.min(+e.target.value, filtros.scoreMax) })}
+            className="dual-thumb"
+            style={{ zIndex: filtros.scoreMin > 50 ? 5 : 3 }}
+          />
+          <input
+            type="range" min={0} max={100} value={filtros.scoreMax}
+            onChange={(e) => onChange({ ...filtros, scoreMax: Math.max(+e.target.value, filtros.scoreMin) })}
+            className="dual-thumb"
+            style={{ zIndex: filtros.scoreMax <= 50 ? 5 : 3 }}
+          />
+        </div>
       </div>
 
       <button
